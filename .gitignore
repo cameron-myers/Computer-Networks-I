@@ -3,3 +3,10 @@
 /Assignment1/.vs
 /Assignment1/x64
 *.zip
+*.pdb
+*.obj
+*.tlog
+/Assignment2/.vs
+*.log
+*.recipe
+/Assignment2/x64

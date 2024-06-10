@@ -10,3 +10,5 @@
 *.log
 *.recipe
 /Assignment2/x64
+/Assignment2/Debug
+/Assignment2/Release

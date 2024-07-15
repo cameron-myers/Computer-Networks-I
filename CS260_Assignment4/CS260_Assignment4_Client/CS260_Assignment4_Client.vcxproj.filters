@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Game States">
+      <UniqueIdentifier>{0e1318a0-66cf-4509-8a30-0077b3d5a4e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Game Modes">
+      <UniqueIdentifier>{fc8aa19e-f9da-421d-8a80-65a32c9918ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Game Objects">
+      <UniqueIdentifier>{b867aecd-0cca-4909-b306-1d96975523ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Input Handlers">
+      <UniqueIdentifier>{f62418d9-fa55-484a-bd77-5549dbf0c712}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game States">
+      <UniqueIdentifier>{0a174a8c-0843-4924-9a01-28b628ecaeac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game Modes">
+      <UniqueIdentifier>{ea4f0222-ba1c-42e8-bcc7-e8bae601c4f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game Objects">
+      <UniqueIdentifier>{3fd5a359-4680-42f8-9161-ea0baca03c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Input Handlers">
+      <UniqueIdentifier>{b4b6f539-0053-4fd6-8b1a-92f9ff6328c1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CS260_Assignment4_Client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Board.cpp">
+      <Filter>Source Files\Game Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="BoardGame.cpp">
+      <Filter>Source Files\Game Modes</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalPlayerController.cpp">
+      <Filter>Source Files\Input Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="LockstepConfiguringState.cpp">
+      <Filter>Source Files\Game States</Filter>
+    </ClCompile>
+    <ClCompile Include="LockstepConnectingState.cpp">
+      <Filter>Source Files\Game States</Filter>
+    </ClCompile>
+    <ClCompile Include="LockstepHostingState.cpp">
+      <Filter>Source Files\Game States</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayGameState.cpp">
+      <Filter>Source Files\Game States</Filter>
+    </ClCompile>
+    <ClCompile Include="LockstepGame.cpp">
+      <Filter>Source Files\Game Modes</Filter>
+    </ClCompile>
+    <ClCompile Include="SinglePlayerGame.cpp">
+      <Filter>Source Files\Game Modes</Filter>
+    </ClCompile>
+    <ClCompile Include="PortEntryField.cpp">
+      <Filter>Source Files\Input Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Source Files\Game Objects</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LockstepConnectingState.h">
+      <Filter>Header Files\Game States</Filter>
+    </ClInclude>
+    <ClInclude Include="LockstepConfiguringState.h">
+      <Filter>Header Files\Game States</Filter>
+    </ClInclude>
+    <ClInclude Include="LockstepHostingState.h">
+      <Filter>Header Files\Game States</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayGameState.h">
+      <Filter>Header Files\Game States</Filter>
+    </ClInclude>
+    <ClInclude Include="BoardGame.h">
+      <Filter>Header Files\Game Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="SinglePlayerGame.h">
+      <Filter>Header Files\Game Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="LockstepGame.h">
+      <Filter>Header Files\Game Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="Board.h">
+      <Filter>Header Files\Game Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="BoardPosition.h">
+      <Filter>Header Files\Game Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Header Files\Game Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalPlayerController.h">
+      <Filter>Header Files\Input Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="PortEntryField.h">
+      <Filter>Header Files\Input Handlers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

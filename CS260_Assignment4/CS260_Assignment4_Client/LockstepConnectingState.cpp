@@ -57,11 +57,15 @@ bool LockstepConnectingState_HandleSocketError(const char* error_text)
 }
 
 
+
+
 /// <summary>
 /// Handles entry into this game state
 /// </summary>
 void LockstepConnectingState_Init()
 {
+	//result int for winsock functions
+	int result;
 	// establish the timeout
 	connecting_timeout_secs = 3.0f;
 
@@ -79,13 +83,43 @@ void LockstepConnectingState_Init()
 		return;
 	}
 
-	//TODO: make the socket non-blocking
+	//make the socket non-blocking
+	u_long iMode = 1;
+	result = ioctlsocket(connecting_socket, FIONBIO, &iMode);
+	if (result != 0)
+	{
+		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+	}
 
-	//TODO: set the UDP socket to reference the specified port on the local machine (127.0.0.1)
+	//set the UDP socket to reference the specified port on the local machine (127.0.0.1)
 	// -- which API lets you later use send/recv on a UDP socket?
+	sockaddr_in connecting_address = sockaddr_in();
+	memset(&connecting_address.sin_zero, 0, 8);
+	connecting_address.sin_family = AF_INET;
+	connecting_address.sin_port = htons(connecting_port);
+	//resolve the IP
+	result = inet_pton(AF_INET, "127.0.0.1", &connecting_address.sin_addr);
+	if(result != 1)
+	{
+		std::cerr << "inet_pton failed " << WSAGetLastError() << std::endl;
+	}
 
-	//TODO: send a buffer containing the word "Lockstep" to the server
+	//bind addr to the socket
+	result = bind(connecting_socket, (const sockaddr*)&connecting_address, sizeof(connecting_address));
+	if (result != 0)
+	{
+		std::cerr << "bind failed " << WSAGetLastError() << std::endl;
+	}
 
+
+	//send a buffer containing the word "Lockstep" to the server
+	//SEND DATA////////////////////////////////////
+	int bytes_sent = sendto(connecting_socket, "CON_REQ: Lockstep", (int)strlen("CON_REQ: Lockstep"), 0, NULL, NULL);
+	if (bytes_sent == 0)
+	{
+		std::cerr << "failed to send data to the server" << WSAGetLastError() << std::endl;
+	}
+	///////////////////////////////////////////////
 	std::cout << "Attempting to connect to a game server on port " << connecting_port << std::endl;
 }
 
@@ -114,11 +148,17 @@ void LockstepConnectingState_Update()
 		return;
 	}
 
-	//TODO: attempt to receive a response from a hosting server
-	int res = 0; // replace "0" with the recv call...
+	int result;
+	//attempt to receive a response from a hosting server
+	int bufferSize = 1500;
+	std::string output;
+	char* recv_buff = new char[bufferSize];
+	ZeroMemory(recv_buff, 0, bufferSize);
+
+	result = recv(connecting_socket, recv_buff, bufferSize, 0);
 
 	// if any bytes are received (don't bother to parse), then assume we're ready to play, and transition to PlayGame, re-using the socket, as non-host
-	if (res > 0)
+	if (result > 0)
 	{
 		std::cout << "Received a response from a game server on port " << connecting_port << ", moving on to gameplay..." << std::endl;
 		PlayGame(new LockstepGame(connecting_socket, false));

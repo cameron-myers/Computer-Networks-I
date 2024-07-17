@@ -52,8 +52,14 @@ LockstepGame::LockstepGame(const SOCKET socket, const bool is_host)
 	, turn_number_(0)
 {
 	network_buffer_ = new char[kNetworkBufferSize];
-	
-	//TODO: set the socket as non-blocking
+
+	//set the socket as non-blocking
+	u_long iMode = 1;
+	int result = ioctlsocket(socket, FIONBIO, &iMode);
+	if (result != 0)
+	{
+		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+	}
 
 	// calculate the center of the board, and move the two players just off of the center in opposite directions
 	const auto midpoint_x = board_.GetTileCountX() / 2;
@@ -110,8 +116,8 @@ void LockstepGame::Update()
 		std::cout << "Sending local update for turn " << turn_number_ << " to remote." << std::endl;
 	}
 
-	//TODO: attempt to receive data from the remote player
-	const int res = 0; // replace "0" with recv...
+	//attempt to receive data from the remote player
+	const int res = recv(socket_, network_buffer_, sizeof(network_buffer_), 0);
 	// if we received a packet, deserialize it as remote data
 	if (res > 0)
 	{

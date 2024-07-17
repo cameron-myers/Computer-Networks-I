@@ -66,9 +66,33 @@ void LockstepHostingState_Init()
 		return;
 	}
 	
-	//TODO: set the socket as non-blocking
-	
-	//TODO: bind the hosting socket to the specified port on the local machine (127.0.0.1)
+	// set the socket as non-blocking
+	u_long iMode = 1;
+	int result = ioctlsocket(hosting_socket, FIONBIO, &iMode);
+	if (result != 0)
+	{
+		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+	}
+
+	// bind the hosting socket to the specified port on the local machine (127.0.0.1)
+	sockaddr_in hosting_address = sockaddr_in();
+	memset(&hosting_address.sin_zero, 0, 8);
+	hosting_address.sin_family = AF_INET;
+	hosting_address.sin_port = htons(hosting_port);
+	//resolve the IP
+	result = inet_pton(AF_INET, "127.0.0.1", &hosting_address.sin_addr);
+	if (result != 1)
+	{
+		std::cerr << "inet_pton failed " << WSAGetLastError() << std::endl;
+	}
+
+	//bind addr to the socket
+	result = bind(hosting_socket, (const sockaddr*)&hosting_address, sizeof(hosting_address));
+	if (result != 0)
+	{
+		std::cerr << "bind failed " << WSAGetLastError() << std::endl;
+	}
+
 
 	std::cout << "Hosting a game server on port " << hosting_port << std::endl;
 }
@@ -87,20 +111,29 @@ void LockstepHostingState_Update()
 		return;
 	}
 
-	//TODO: attempt to receive a message from a connecting client
+
+	//attempt to receive a message from a connecting client
 	// -- note that this must be recvfrom, since we don't know the identity of the other machine...
-	int res = 0; // replace "0" with recfrom...
-	 
+	sockaddr recv_address = sockaddr();
+	int recv_address_size;
+	int result = recvfrom(hosting_socket, NULL, NULL, 0, &recv_address, &recv_address_size); // replace "0" with recfrom...
+
+
 	// if any bytes are received (don't bother to parse):
-	if (res > 0)
+	if (result > 0)
 	{
 		std::cout << "Received a message from a potential player, acknowledging..." << std::endl;
 		
-		//TODO: set the hosting socket to reference the address the message was received from
+		//set the hosting socket to reference the address the message was received from
 		// -- the same API we used in LockstepConnectingState - the one that lets us use send/recv with a UDP socket...
+		result = bind(hosting_socket, &recv_address, recv_address_size);
+		if(result != 0)
+		{
+			std::cerr << "bind failed in host" << WSAGetLastError() << std::endl;
 
-		//TODO: send an acknowledgement message, "LetUsBegin"
-		
+		}
+		// send an acknowledgement message, "LetUsBegin"
+		int bytes_sent = send(hosting_socket, "LetUsBegin", strlen("LetUsBegin"), 0);
 		// -- move on to lockstep gameplay, using the hosting socket, in host mode
 		std::cout << "Successfully hosting a game on port " << hosting_port << " with another user, moving on to gameplay..." << std::endl;
 		PlayGame(new LockstepGame(hosting_socket, true));

@@ -42,8 +42,17 @@ int main(void)
 {
 	ShowConsole();
 
-	//TODO: initialize winsock
+	//initialize winsock
 	// -- if it fails, output to cerr and return 1
+	//INIT WINSOCK/////////////////////////////////
+	WSADATA wsa_data;
+	int res = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+	if (res != 0)
+	{
+		std::cerr << "Error in WSAStartup: " << WSAGetLastError() << std::endl;
+		return 1;
+	}
+	///////////////////////////////////////////////
 
 
 	// establish the initial window settings

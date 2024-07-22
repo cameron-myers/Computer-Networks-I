@@ -86,9 +86,9 @@ void LockstepConnectingState_Init()
 	//make the socket non-blocking
 	u_long iMode = 1;
 	result = ioctlsocket(connecting_socket, FIONBIO, &iMode);
-	if (result != 0)
+	if (result == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error when setting socket to non-blocking:"))
 	{
-		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+		return;
 	}
 
 	//set the UDP socket to reference the specified port on the local machine (127.0.0.1)
@@ -99,25 +99,25 @@ void LockstepConnectingState_Init()
 	connecting_address.sin_port = htons(connecting_port);
 	//resolve the IP
 	result = inet_pton(AF_INET, "127.0.0.1", &connecting_address.sin_addr);
-	if(result != 1)
+	if (result != 0 && LockstepConnectingState_HandleSocketError("Error resolving localhost"))
 	{
-		std::cerr << "inet_pton failed " << WSAGetLastError() << std::endl;
+		return;
 	}
 
 	//bind addr to the socket
 	result = bind(connecting_socket, (const sockaddr*)&connecting_address, sizeof(connecting_address));
-	if (result != 0)
+	if (result == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error binding socket:"))
 	{
-		std::cerr << "bind failed " << WSAGetLastError() << std::endl;
+		return;
 	}
 
 
 	//send a buffer containing the word "Lockstep" to the server
 	//SEND DATA////////////////////////////////////
 	int bytes_sent = sendto(connecting_socket, "CON_REQ: Lockstep", (int)strlen("CON_REQ: Lockstep"), 0, NULL, NULL);
-	if (bytes_sent == 0)
+	if (bytes_sent == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error sending from socket:"))
 	{
-		std::cerr << "failed to send data to the server" << WSAGetLastError() << std::endl;
+		return;
 	}
 	///////////////////////////////////////////////
 	std::cout << "Attempting to connect to a game server on port " << connecting_port << std::endl;

@@ -69,9 +69,10 @@ void LockstepHostingState_Init()
 	// set the socket as non-blocking
 	u_long iMode = 1;
 	int result = ioctlsocket(hosting_socket, FIONBIO, &iMode);
-	if (result != 0)
+	if ((result == SOCKET_ERROR) &&
+		LockstepHostingState_HandleSocketError("Error setting socket to non-blocking: "))
 	{
-		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+		return;
 	}
 
 	// bind the hosting socket to the specified port on the local machine (127.0.0.1)
@@ -81,16 +82,16 @@ void LockstepHostingState_Init()
 	hosting_address.sin_port = htons(hosting_port);
 	//resolve the IP
 	result = inet_pton(AF_INET, "127.0.0.1", &hosting_address.sin_addr);
-	if (result != 1)
+	if (result != 0 && LockstepHostingState_HandleSocketError("Error resolving localhost"))
 	{
-		std::cerr << "inet_pton failed " << WSAGetLastError() << std::endl;
+		return;
 	}
 
 	//bind addr to the socket
 	result = bind(hosting_socket, (const sockaddr*)&hosting_address, sizeof(hosting_address));
-	if (result != 0)
+	if (result == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error binding socket:"))
 	{
-		std::cerr << "bind failed " << WSAGetLastError() << std::endl;
+		return;
 	}
 
 
@@ -134,6 +135,10 @@ void LockstepHostingState_Update()
 		}
 		// send an acknowledgement message, "LetUsBegin"
 		int bytes_sent = send(hosting_socket, "LetUsBegin", strlen("LetUsBegin"), 0);
+		if (bytes_sent == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error sending from socket:"))
+		{
+			return;
+		}
 		// -- move on to lockstep gameplay, using the hosting socket, in host mode
 		std::cout << "Successfully hosting a game on port " << hosting_port << " with another user, moving on to gameplay..." << std::endl;
 		PlayGame(new LockstepGame(hosting_socket, true));

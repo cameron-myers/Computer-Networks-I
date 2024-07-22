@@ -56,9 +56,9 @@ LockstepGame::LockstepGame(const SOCKET socket, const bool is_host)
 	//set the socket as non-blocking
 	u_long iMode = 1;
 	int result = ioctlsocket(socket, FIONBIO, &iMode);
-	if (result != 0)
+	if (result == SOCKET_ERROR && LockstepGame_HandleSocketError("Error when setting socket to non-blocking:"))
 	{
-		std::cerr << "failed to set to non-blocking mode" << WSAGetLastError() << std::endl;
+		return;
 	}
 
 	// calculate the center of the board, and move the two players just off of the center in opposite directions
@@ -106,7 +106,13 @@ void LockstepGame::Update()
 		// serialize the local state
 		const auto send_size = SerializeLocalState();
 		
-		//TODO: send the state to the remote player
+		//send the state to the remote player
+		int result = send(socket_, network_buffer_, sizeof(network_buffer_), 0);
+
+		if (result == SOCKET_ERROR && LockstepGame_HandleSocketError("Error when sending state data:"))
+		{
+			return;
+		}
 		// -- don't forget to handle errors appropriately with the LockstepGame_HandleSocketErrors function!
 
 		// mark that we sent this update, so we do not send it again
@@ -187,9 +193,14 @@ std::string LockstepGame::GetDescription() const
 /// <returns>The number of bytes serialized.</returns>
 size_t LockstepGame::SerializeLocalState() const
 {
-	//TODO: serialize the turn number, identifying this move
+	ZeroMemory(network_buffer_, sizeof(network_buffer_));
 
-	//TODO: serialize the uncommitted position of the local player
+	//serialize the turn number, identifying this move
+	_itoa_s(turn_number_, network_buffer_, sizeof(int), 10);
+
+	//serialize the uncommitted position of the local player
+	_itoa_s(local_player_.current_position.x, network_buffer_ + sizeof(int), sizeof(int), 10);
+	_itoa_s(local_player_.current_position.y, network_buffer_ + sizeof(int) * 2, sizeof(int), 10);
 
 	return sizeof(turn_number_) + sizeof(local_player_.current_position);
 }
@@ -204,8 +215,12 @@ void LockstepGame::DeserializeRemoteState(const size_t bytes_received)
 	// validate the parameter - the size of the buffer read
 	assert(bytes_received >= sizeof(turn_number_) + sizeof(remote_player_.current_position));
 
-	//TODO: deserialize the turn number
-	const auto remote_turn_number = 0; // replace "0" with the deserialized data...
+	//deserialize the turn number
+	char temp[sizeof(int)];
+	ZeroMemory(temp, sizeof(int));
+	memcpy(temp, network_buffer_, sizeof(int));
+
+	const auto remote_turn_number = atoi(temp);
 
 	// log the data received
 	std::cout << "Received update from remote player's turn " << remote_turn_number << "." << std::endl;
@@ -223,8 +238,13 @@ void LockstepGame::DeserializeRemoteState(const size_t bytes_received)
 		std::cerr << "Received update for remote player on the correct turn (" << remote_turn_number << "), but the remote player already has an uncommitted move.  How is this possible?" << std::endl;
 	}
 
-	//TODO: deserialize the uncommitted position of the remote player
-	remote_player_.uncommitted_position = {0,0}; // replace "{0,0}" with the deserialized data
+	//deserialize the uncommitted position of the remote player
+	ZeroMemory(temp, sizeof(int));
+	memcpy(temp, network_buffer_ + sizeof(int), sizeof(int));
+	remote_player_.uncommitted_position.x = atoi(temp);
+	ZeroMemory(temp, sizeof(int));
+	memcpy(temp, network_buffer_ + (sizeof(int) * 2), sizeof(int));
+	remote_player_.uncommitted_position.y = atoi(temp);
 
 	// mark the remote player as having an uncommitted move
 	remote_player_.has_uncommitted_move = true;

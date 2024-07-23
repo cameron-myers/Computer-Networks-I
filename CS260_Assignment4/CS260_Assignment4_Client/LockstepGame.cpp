@@ -107,7 +107,7 @@ void LockstepGame::Update()
 		const auto send_size = SerializeLocalState();
 		
 		//send the state to the remote player
-		int result = send(socket_, network_buffer_, sizeof(network_buffer_), 0);
+		int result = send(socket_, network_buffer_, send_size, 0);
 
 		if (result == SOCKET_ERROR && LockstepGame_HandleSocketError("Error when sending state data:"))
 		{

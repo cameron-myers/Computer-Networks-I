@@ -20,7 +20,7 @@
 
 u_short connecting_port;
 SOCKET connecting_socket = INVALID_SOCKET;
-float connecting_timeout_secs = 3.0f;
+float connecting_timeout_secs = 10.0f;
 std::string connecting_text;
 
 
@@ -93,28 +93,26 @@ void LockstepConnectingState_Init()
 
 	//set the UDP socket to reference the specified port on the local machine (127.0.0.1)
 	// -- which API lets you later use send/recv on a UDP socket?
-	sockaddr_in connecting_address = sockaddr_in();
+	sockaddr_in connecting_address;
 	memset(&connecting_address.sin_zero, 0, 8);
 	connecting_address.sin_family = AF_INET;
 	connecting_address.sin_port = htons(connecting_port);
 	//resolve the IP
 	result = inet_pton(AF_INET, "127.0.0.1", &connecting_address.sin_addr);
-	if (result != 0 && LockstepConnectingState_HandleSocketError("Error resolving localhost"))
+	if (result != 1 && LockstepConnectingState_HandleSocketError("Error resolving localhost"))
 	{
 		return;
 	}
 
-	//bind addr to the socket
-	result = bind(connecting_socket, (const sockaddr*)&connecting_address, sizeof(connecting_address));
-	if (result == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error binding socket:"))
+	result = connect(connecting_socket, (const sockaddr*)&connecting_address, sizeof(connecting_address));
+	if (result == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error connecting socket:"))
 	{
 		return;
 	}
-
 
 	//send a buffer containing the word "Lockstep" to the server
 	//SEND DATA////////////////////////////////////
-	int bytes_sent = sendto(connecting_socket, "CON_REQ: Lockstep", (int)strlen("CON_REQ: Lockstep"), 0, NULL, NULL);
+	int bytes_sent = send(connecting_socket, "Lockstep", (int)strlen("Lockstep"), 0);
 	if (bytes_sent == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error sending from socket:"))
 	{
 		return;
@@ -151,11 +149,14 @@ void LockstepConnectingState_Update()
 	int result;
 	//attempt to receive a response from a hosting server
 	int bufferSize = 1500;
-	std::string output;
 	char* recv_buff = new char[bufferSize];
-	ZeroMemory(recv_buff, 0, bufferSize);
+	ZeroMemory(recv_buff, bufferSize);
 
 	result = recv(connecting_socket, recv_buff, bufferSize, 0);
+	if (result == SOCKET_ERROR && LockstepConnectingState_HandleSocketError("Error when recv during connect:"))
+	{
+		return;
+	}
 
 	// if any bytes are received (don't bother to parse), then assume we're ready to play, and transition to PlayGame, re-using the socket, as non-host
 	if (result > 0)

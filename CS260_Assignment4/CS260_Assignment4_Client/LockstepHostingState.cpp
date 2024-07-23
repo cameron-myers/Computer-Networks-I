@@ -69,20 +69,19 @@ void LockstepHostingState_Init()
 	// set the socket as non-blocking
 	u_long iMode = 1;
 	int result = ioctlsocket(hosting_socket, FIONBIO, &iMode);
-	if ((result == SOCKET_ERROR) &&
-		LockstepHostingState_HandleSocketError("Error setting socket to non-blocking: "))
+	if (result == SOCKET_ERROR &&LockstepHostingState_HandleSocketError("Error setting socket to non-blocking: "))
 	{
 		return;
 	}
 
 	// bind the hosting socket to the specified port on the local machine (127.0.0.1)
-	sockaddr_in hosting_address = sockaddr_in();
+	sockaddr_in hosting_address;
 	memset(&hosting_address.sin_zero, 0, 8);
 	hosting_address.sin_family = AF_INET;
 	hosting_address.sin_port = htons(hosting_port);
 	//resolve the IP
 	result = inet_pton(AF_INET, "127.0.0.1", &hosting_address.sin_addr);
-	if (result != 0 && LockstepHostingState_HandleSocketError("Error resolving localhost"))
+	if (result != 1 && LockstepHostingState_HandleSocketError("Error resolving localhost"))
 	{
 		return;
 	}
@@ -115,10 +114,20 @@ void LockstepHostingState_Update()
 
 	//attempt to receive a message from a connecting client
 	// -- note that this must be recvfrom, since we don't know the identity of the other machine...
-	sockaddr recv_address = sockaddr();
-	int recv_address_size;
-	int result = recvfrom(hosting_socket, NULL, NULL, 0, &recv_address, &recv_address_size); // replace "0" with recfrom...
+	sockaddr_in recv_address;
+	
 
+	
+	int recv_address_size = sizeof(recv_address);
+	int bufferSize = 1500;
+	char* recv_buff = new char[bufferSize];
+	ZeroMemory(recv_buff, bufferSize);
+
+	int result = recvfrom(hosting_socket, recv_buff , bufferSize, 0, (sockaddr*)&recv_address, &recv_address_size); // replace "0" with recfrom...
+	if(result == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error recvfrom socket:"))
+	{
+		return;
+	} 
 
 	// if any bytes are received (don't bother to parse):
 	if (result > 0)
@@ -127,11 +136,16 @@ void LockstepHostingState_Update()
 		
 		//set the hosting socket to reference the address the message was received from
 		// -- the same API we used in LockstepConnectingState - the one that lets us use send/recv with a UDP socket...
-		result = bind(hosting_socket, &recv_address, recv_address_size);
-		if(result != 0)
-		{
-			std::cerr << "bind failed in host" << WSAGetLastError() << std::endl;
+		//memset(&recv_address.sin_zero, 0, 8);
+		//recv_address.sin_family = AF_INET;
+		recv_address.sin_port = htons(hosting_port);
+		char ip[16];
+		inet_ntop(AF_INET,&recv_address.sin_addr,ip, 16 );
 
+		result = connect(hosting_socket, (const sockaddr*)&recv_address, sizeof(recv_address));
+		if (result == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error connecting socket:"))
+		{
+			return;
 		}
 		// send an acknowledgement message, "LetUsBegin"
 		int bytes_sent = send(hosting_socket, "LetUsBegin", strlen("LetUsBegin"), 0);

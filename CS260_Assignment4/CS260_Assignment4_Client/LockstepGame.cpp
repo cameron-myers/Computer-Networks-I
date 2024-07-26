@@ -101,14 +101,16 @@ void LockstepGame::Update()
 	// apply input to the local player
 	LocalPlayerController::ApplyInput(local_player_, board_);
 	// if the player now has an uncommitted move, AND we haven't sent anything this turn, send an update to the remote machine
+
 	if (!is_local_update_sent_&& local_player_.has_uncommitted_move)
 	{
+
 		// serialize the local state
 		const auto send_size = SerializeLocalState();
-		
+
 		//send the state to the remote player
 		int result = send(socket_, network_buffer_, send_size, 0);
-
+		ZeroMemory(network_buffer_, kNetworkBufferSize);
 		if (result == SOCKET_ERROR && LockstepGame_HandleSocketError("Error when sending state data:"))
 		{
 			return;
@@ -123,7 +125,11 @@ void LockstepGame::Update()
 	}
 
 	//attempt to receive data from the remote player
-	const int res = recv(socket_, network_buffer_, sizeof(network_buffer_), 0);
+	const int res = recv(socket_, network_buffer_, kNetworkBufferSize, 0);
+	if (res == SOCKET_ERROR && LockstepGame_HandleSocketError("Error when recv state data:"))
+	{
+		return;
+	}
 	// if we received a packet, deserialize it as remote data
 	if (res > 0)
 	{
@@ -193,14 +199,14 @@ std::string LockstepGame::GetDescription() const
 /// <returns>The number of bytes serialized.</returns>
 size_t LockstepGame::SerializeLocalState() const
 {
-	ZeroMemory(network_buffer_, sizeof(network_buffer_));
+
 
 	//serialize the turn number, identifying this move
-	_itoa_s(turn_number_, network_buffer_, sizeof(int), 10);
-
+	*network_buffer_ = (char)turn_number_;
 	//serialize the uncommitted position of the local player
-	_itoa_s(local_player_.current_position.x, network_buffer_ + sizeof(int), sizeof(int), 10);
-	_itoa_s(local_player_.current_position.y, network_buffer_ + sizeof(int) * 2, sizeof(int), 10);
+	*(network_buffer_ + sizeof(int)) = (char)local_player_.uncommitted_position.x;
+	
+	*(network_buffer_ + sizeof(int) + sizeof(int)) = (char)local_player_.uncommitted_position.y;
 
 	return sizeof(turn_number_) + sizeof(local_player_.current_position);
 }
@@ -216,12 +222,8 @@ void LockstepGame::DeserializeRemoteState(const size_t bytes_received)
 	assert(bytes_received >= sizeof(turn_number_) + sizeof(remote_player_.current_position));
 
 	//deserialize the turn number
-	char temp[sizeof(int)];
-	ZeroMemory(temp, sizeof(int));
-	memcpy(temp, network_buffer_, sizeof(int));
 
-	const auto remote_turn_number = atoi(temp);
-
+	int remote_turn_number = (int)*network_buffer_;
 	// log the data received
 	std::cout << "Received update from remote player's turn " << remote_turn_number << "." << std::endl;
 
@@ -239,12 +241,8 @@ void LockstepGame::DeserializeRemoteState(const size_t bytes_received)
 	}
 
 	//deserialize the uncommitted position of the remote player
-	ZeroMemory(temp, sizeof(int));
-	memcpy(temp, network_buffer_ + sizeof(int), sizeof(int));
-	remote_player_.uncommitted_position.x = atoi(temp);
-	ZeroMemory(temp, sizeof(int));
-	memcpy(temp, network_buffer_ + (sizeof(int) * 2), sizeof(int));
-	remote_player_.uncommitted_position.y = atoi(temp);
+	remote_player_.uncommitted_position.x = (int)*(network_buffer_ + sizeof(int));
+	remote_player_.uncommitted_position.y = (int)*(network_buffer_ + sizeof(int) + sizeof(int));
 
 	// mark the remote player as having an uncommitted move
 	remote_player_.has_uncommitted_move = true;

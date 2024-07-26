@@ -115,9 +115,7 @@ void LockstepHostingState_Update()
 	//attempt to receive a message from a connecting client
 	// -- note that this must be recvfrom, since we don't know the identity of the other machine...
 	sockaddr_in recv_address;
-	
 
-	
 	int recv_address_size = sizeof(recv_address);
 	int bufferSize = 1500;
 	char* recv_buff = new char[bufferSize];
@@ -136,19 +134,15 @@ void LockstepHostingState_Update()
 		
 		//set the hosting socket to reference the address the message was received from
 		// -- the same API we used in LockstepConnectingState - the one that lets us use send/recv with a UDP socket...
-		//memset(&recv_address.sin_zero, 0, 8);
-		//recv_address.sin_family = AF_INET;
-		recv_address.sin_port = htons(hosting_port);
-		char ip[16];
-		inet_ntop(AF_INET,&recv_address.sin_addr,ip, 16 );
 
 		result = connect(hosting_socket, (const sockaddr*)&recv_address, sizeof(recv_address));
 		if (result == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error connecting socket:"))
 		{
 			return;
 		}
+		const char* ack = "LetUsBegin";
 		// send an acknowledgement message, "LetUsBegin"
-		int bytes_sent = send(hosting_socket, "LetUsBegin", strlen("LetUsBegin"), 0);
+		int bytes_sent = send(hosting_socket, ack, (int)strlen(ack), 0);
 		if (bytes_sent == SOCKET_ERROR && LockstepHostingState_HandleSocketError("Error sending from socket:"))
 		{
 			return;
